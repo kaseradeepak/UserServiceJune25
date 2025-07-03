@@ -1,19 +1,20 @@
 package com.scaler.userservicejune25.services;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.scaler.userservicejune25.dtos.SendEmailEventDto;
 import com.scaler.userservicejune25.exceptions.InvalidTokenException;
 import com.scaler.userservicejune25.models.Token;
 import com.scaler.userservicejune25.models.User;
 import com.scaler.userservicejune25.repositories.TokenRepository;
 import com.scaler.userservicejune25.repositories.UserRepository;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import javax.swing.plaf.basic.BasicComboBoxRenderer;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.Optional;
 
@@ -22,13 +23,19 @@ public class UserService {
     private UserRepository userRepository;
     private TokenRepository tokenRepository;
     private BCryptPasswordEncoder bCryptPasswordEncoder;
+    private KafkaTemplate<String, String> kafkaTemplate;
+    private ObjectMapper objectMapper;
 
     public UserService(UserRepository userRepository,
                        TokenRepository tokenRepository,
-                       BCryptPasswordEncoder bCryptPasswordEncoder) {
+                       BCryptPasswordEncoder bCryptPasswordEncoder,
+                       KafkaTemplate kafkaTemplate,
+                       ObjectMapper objectMapper) {
         this.userRepository = userRepository;
         this.tokenRepository = tokenRepository;
         this.bCryptPasswordEncoder = bCryptPasswordEncoder;
+        this.kafkaTemplate = kafkaTemplate;
+        this.objectMapper = objectMapper;
     }
 
     public Token login(String email, String password) {
@@ -60,7 +67,7 @@ public class UserService {
         return tokenRepository.save(token);
     }
 
-    public User signUp(String name, String email, String password) {
+    public User signUp(String name, String email, String password) throws JsonProcessingException {
         Optional<User> optionalUser = userRepository.findByEmail(email);
 
         if (optionalUser.isPresent()) {
@@ -72,7 +79,19 @@ public class UserService {
         user.setName(name);
         user.setPassword(bCryptPasswordEncoder.encode(password));
 
-        return userRepository.save(user);
+        user = userRepository.save(user);
+
+        SendEmailEventDto eventDto = new SendEmailEventDto();
+        eventDto.setEmail(email);
+        eventDto.setSubject("Welcome to Scaler!");
+        eventDto.setBody("Welcome to Scaler!");
+
+        kafkaTemplate.send(
+                "sendEmailEvent",
+                objectMapper.writeValueAsString(eventDto)
+        );
+
+        return user;
     }
 
     public User validateToken(String tokenValue) throws InvalidTokenException {

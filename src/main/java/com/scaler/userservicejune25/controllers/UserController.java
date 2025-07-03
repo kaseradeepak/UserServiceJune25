@@ -1,5 +1,6 @@
 package com.scaler.userservicejune25.controllers;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.scaler.userservicejune25.dtos.LoginRequestDto;
 import com.scaler.userservicejune25.dtos.SignupRequestDto;
 import com.scaler.userservicejune25.dtos.TokenDto;
@@ -38,7 +39,7 @@ public class UserController {
     }
 
     @PostMapping("/signup")
-    public UserDto signup(@RequestBody SignupRequestDto requestDto) {
+    public UserDto signup(@RequestBody SignupRequestDto requestDto) throws JsonProcessingException {
         User user = userService.signUp(
                 requestDto.getName(),
                 requestDto.getEmail(),
