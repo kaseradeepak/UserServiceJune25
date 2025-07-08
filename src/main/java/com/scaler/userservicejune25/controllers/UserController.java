@@ -51,11 +51,10 @@ public class UserController {
 
     @GetMapping("/validate/{tokenValue}")
     public ResponseEntity<UserDto> validateToken(@PathVariable("tokenValue") String tokenValue) throws InvalidTokenException {
-
         System.out.println("Validating token...... ");
 
-        //User user = userService.validateToken(tokenValue);
-
+//        User user = userService.validateToken(tokenValue);
+//
 //        if (user == null) {
 //            //Token is invalid or expired
 //            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
@@ -67,7 +66,7 @@ public class UserController {
 //                HttpStatus.OK
 //        );
 
-        return new ResponseEntity<>(null, HttpStatus.OK);
+        return null;
     }
 
 //    private UserDto from(User user) {
